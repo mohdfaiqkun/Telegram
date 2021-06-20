@@ -1,11 +1,10 @@
 import { Low, JSONFile } from "lowdb";
 import TelegramBot from "node-telegram-bot-api";
 import { join } from "path";
-import { networkInterfaces } from "os";
-import { getWeather } from './weather.js';
+import { getIP } from "./ipv4.js";
+import { getWeather } from "./weather.js";
 
 const token = "1764741890:AAFpDcj3gUFtC--LNRManbxbmCEZDG0rTmQ";
-
 
 //Creating a Telegram Bot
 const bot = new TelegramBot(token, {
@@ -33,8 +32,6 @@ Available commands:
   );
 });
 
-
-
 //On /weather message
 bot.onText(/\/weather/, async (msg, match) => {
   const chatId = msg.chat.id;
@@ -45,40 +42,24 @@ bot.onText(/\/weather/, async (msg, match) => {
     return;
   }
   const weatherResult = await getWeather(city);
-  bot.sendMessage(chatId, weatherResult, {parse_mode: "HTML"})
+  bot.sendMessage(chatId, weatherResult, { parse_mode: "HTML" });
   return;
 });
 
-
 //IPv4 COMMAND
-bot.onText(/\/ipv4/, (msg) => {
+bot.onText(/\/ipv4/, async (msg) => {
   const chatId = msg.chat.id;
-  const nets = networkInterfaces();
-  const results = {};
-  let ipAdd;
+  const IPResults = await getIP();
 
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-      if (net.family === "IPv4" && !net.internal) {
-        if (!results[name]) {
-          results[name] = [];
-        }
-        results[name].push(net.address);
-        ipAdd = name;
-      }
-    }
-  }
-
-  if (results.length > 1) {
-    bot.sendMessage(chatId, `There are multiple IP: ${results[ipAdd]}`, {
+  if (IPResults.length > 1) {
+    bot.sendMessage(chatId, `There are multiple IP: ${IPResults}`, {
       parse_mode: "HTML",
     });
   } else {
-    bot.sendMessage(chatId, `The IP is: ${results[ipAdd]}`, {
+    bot.sendMessage(chatId, `The IP is: ${IPResults}`, {
       parse_mode: "HTML",
     });
   }
-
   return;
 });
 
@@ -86,20 +67,19 @@ bot.onText(/\/ipv4/, (msg) => {
 
 //Save notes
 bot.onText(/\/save_note (.+)/, async (msg, savematch) => {
-    const data = await readFromDb();
-    const userID = msg.chat.id;
-    const savenote = savematch[1];
-    const filterResult = data.filter((note) => note.userID === userID);
+  const data = await readFromDb();
+  const userID = msg.chat.id;
+  const savenote = savematch[1];
+  const filterResult = data.filter((note) => note.userID === userID);
 
-    //To check if new user or not
-    if (filterResult.length === 0) {
-      saveToDb(userID, savenote, 1);
-    } else {
-      saveToDb(userID, savenote);
-    }
+  //To check if new user or not
+  if (filterResult.length === 0) {
+    saveToDb(userID, savenote, 1);
+  } else {
+    saveToDb(userID, savenote);
+  }
 
-    bot.sendMessage(userID, `Note saved!`, { parse_mode: "HTML" });
-
+  bot.sendMessage(userID, `Note saved!`, { parse_mode: "HTML" });
 });
 
 //To create and check an array in the database if it is null and return the database

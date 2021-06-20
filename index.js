@@ -2,12 +2,38 @@ import { Low, JSONFile } from "lowdb";
 import TelegramBot from "node-telegram-bot-api";
 import { join } from "path";
 import axios from "axios";
-import ipv4 from "node-ipv4";
 import { networkInterfaces } from "os";
 
 const token = "1764741890:AAFpDcj3gUFtC--LNRManbxbmCEZDG0rTmQ";
 const appID = "28420d0d82cb35240f648cd22425217f";
 
+//Creating a Telegram Bot
+const bot = new TelegramBot(token, {
+  polling: true,
+});
+
+// On /start message
+bot.onText(/\/start/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(
+    chatId,
+    `Welcome user! I am <b>Bot-Ato</b>!
+    
+Available commands:
+
+/weather <b>city</b> - type in your <b>city</b> to get the weather!
+/ipv4 - get the server's IP address!
+/save_note - type your notes after the command to save it!
+/read_note <b>all/#</b>- type <b>all</b> to get all your notes or a <b>number</b> to retrieve a specific note!
+
+  `,
+    {
+      parse_mode: "HTML",
+    }
+  );
+});
+
+//WEATHER COMMAND
 const weatherEndpoint = (city) =>
   `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&&appid=${appID}`;
 
@@ -21,11 +47,6 @@ Humidity: <b>${main.humidity} %</b>
 Wind: <b>${wind.speed} meter/sec</b>
 Clouds: <b>${clouds.all} %</b>
 `;
-
-// Created instance of TelegramBot
-const bot = new TelegramBot(token, {
-  polling: true,
-});
 
 // Function that gets the weather by the city name and stores the user ID
 const getWeather = (chatId, city) => {
@@ -51,7 +72,7 @@ const getWeather = (chatId, city) => {
   );
 };
 
-// Listener (handler) for telegram's /weather event
+//On /weather message
 bot.onText(/\/weather/, (msg, match) => {
   const chatId = msg.chat.id;
   const city = match.input.split(" ")[1];
@@ -63,89 +84,43 @@ bot.onText(/\/weather/, (msg, match) => {
   getWeather(chatId, city);
 });
 
-// On /start message
-bot.onText(/\/start/, (msg) => {
-  const chatId = msg.chat.id;
-  bot.sendMessage(
-    chatId,
-    `Welcome user! I am <b>Bot-Ato</b>!
-    
-Available commands:
 
-/weather <b>city</b> - type in your <b>city</b> to get the weather!
-/ipv4 - get your IP address!
-/save_note - to save your notes!
-/read_note <b>all/#</b>- type <b>all</b> to get all your notes or a <b>number</b> to retrieve a specific note!
-
-  `,
-    {
-      parse_mode: "HTML",
-    }
-  );
-});
-
-//Sends back IP Address to the User
-
-/*bot.onText(/\/ipv4/, (msg, WebHookInfo) => {
-  const chatId = msg.chat.id;
-  ipv4.parse(`192.168.1.1`, 16, (err, subnet) => {
-    console.log(subnet);
-    if (err) return console.error(err);
-    bot.sendMessage(chatId, `${subnet.address.address}`);
-  });
-});*/
-
-/*bot.onText(/\/ipv4/, (msg) => {
-
-  try {
+//IPv4 COMMAND
+bot.onText(/\/ipv4/, (msg) => {
   const chatId = msg.chat.id;
   const nets = networkInterfaces();
-  const IpFilter = nets['Ethernet 2'].filter((net) => net.family === "IPv4" && !net.internal);
+  const results = {};
+  let ipAdd;
 
-    console.log(IpFilter)
-    bot.sendMessage(chatId, IpFilter[0].address, { parse_mode: "HTML" });
-
-  
- return;
-  } catch (error) {
-    console.log(error)
-  }
-
-  
-});*/
-
-bot.onText(/\/ipv4/, (msg) => {
-
-
-  try {
-    const chatId = msg.chat.id;
-    const nets = networkInterfaces();
-    const results = {}; // Or just '{}', an empty object
-    let ipAdd;
-    console.log(nets)
-    for (const name of Object.keys(nets)) {
-      for (const net of nets[name]) {
-        if (net.family === "IPv4" && !net.internal) {
-          if (!results[name]) {
-            results[name] = [];
-          }
-          results[name].push(net.address);
-          ipAdd = name;
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === "IPv4" && !net.internal) {
+        if (!results[name]) {
+          results[name] = [];
         }
+        results[name].push(net.address);
+        ipAdd = name;
       }
-    } 
-    console.log(results)
-    return bot.sendMessage(chatId, `The IP is: ${results[ipAdd]}`, { parse_mode: "HTML" });
-  } catch (error) {
-    console.log(error);
+    }
   }
+
+  if (results.length > 1) {
+    bot.sendMessage(chatId, `There are multiple IP: ${results[ipAdd]}`, {
+      parse_mode: "HTML",
+    });
+  } else {
+    bot.sendMessage(chatId, `The IP is: ${results[ipAdd]}`, {
+      parse_mode: "HTML",
+    });
+  }
+
+  return;
 });
 
-//Save and Receive File
+//SAVE AND RECEIVE NOTE COMMAND
 
 //Save notes
 bot.onText(/\/save_note (.+)/, async (msg, savematch) => {
-  try {
     const data = await readFromDb();
     const userID = msg.chat.id;
     const savenote = savematch[1];
@@ -159,9 +134,7 @@ bot.onText(/\/save_note (.+)/, async (msg, savematch) => {
     }
 
     bot.sendMessage(userID, `Note saved!`, { parse_mode: "HTML" });
-  } catch (error) {
-    console.log(error);
-  }
+
 });
 
 //To create and check an array in the database if it is null and return the database

@@ -4,8 +4,8 @@ import { join } from "path";
 import axios from "axios";
 import { networkInterfaces } from "os";
 
-const token = "1764741890:AAFpDcj3gUFtC--LNRManbxbmCEZDG0rTmQ";
-const appID = "28420d0d82cb35240f648cd22425217f";
+const token = "";
+const appID = "";
 
 //Creating a Telegram Bot
 const bot = new TelegramBot(token, {

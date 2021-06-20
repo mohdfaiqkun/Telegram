@@ -3,7 +3,7 @@ import { getIP } from "./ipv4.js";
 import { getWeather } from "./weather.js";
 import { readFromDb, saveToDb, readAll, readNotesNum } from "./notes.js";
 
-const token = "1764741890:AAFpDcj3gUFtC--LNRManbxbmCEZDG0rTmQ";
+const token = "";
 
 //Creating a Telegram Bot
 const bot = new TelegramBot(token, {

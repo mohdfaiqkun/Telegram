@@ -27,16 +27,5 @@ export async function getWeather(city) {
     console.log("error", error);
     return `Weather not available for: <b>${city}</b>`
   }
-   
-  /*axios.get(endpoint).then(
-    (resp) => {
-      const { name, main, weather, wind, clouds } = resp.data;
-      console.log(weatherHtmlTemplate(name, main, weather[0], wind, clouds))
-      return 'test';
-    },
-    (error) => {
-      console.log("error", error);
-      return `Weather not available for: <b>${city}</b>`
-    });*/
 };
 

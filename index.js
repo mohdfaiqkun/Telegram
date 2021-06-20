@@ -1,8 +1,9 @@
-import { Low, JSONFile } from "lowdb";
+
 import TelegramBot from "node-telegram-bot-api";
-import { join } from "path";
 import { getIP } from "./ipv4.js";
 import { getWeather } from "./weather.js";
+import { readFromDb } from "./notes.js";
+import { saveToDb } from "./notes.js";
 
 const token = "1764741890:AAFpDcj3gUFtC--LNRManbxbmCEZDG0rTmQ";
 
@@ -46,7 +47,7 @@ bot.onText(/\/weather/, async (msg, match) => {
   return;
 });
 
-//IPv4 COMMAND
+//On /ipv4 message
 bot.onText(/\/ipv4/, async (msg) => {
   const chatId = msg.chat.id;
   const IPResults = await getIP();
@@ -63,7 +64,7 @@ bot.onText(/\/ipv4/, async (msg) => {
   return;
 });
 
-//SAVE AND RECEIVE NOTE COMMAND
+//SAVE AND READ NOTE COMMAND
 
 //Save notes
 bot.onText(/\/save_note (.+)/, async (msg, savematch) => {
@@ -78,47 +79,9 @@ bot.onText(/\/save_note (.+)/, async (msg, savematch) => {
   } else {
     saveToDb(userID, savenote);
   }
-
   bot.sendMessage(userID, `Note saved!`, { parse_mode: "HTML" });
 });
 
-//To create and check an array in the database if it is null and return the database
-async function readFromDb() {
-  const db = await connection();
-
-  if (db.data == null) {
-    db.data = [];
-  }
-  return db.data;
-}
-
-//To initiate the module and create the database
-async function connection() {
-  const file = join("/Users/PC/Desktop/Telegram", "db.json");
-  const adapter = new JSONFile(file);
-  const db = new Low(adapter);
-
-  await db.read();
-  return db;
-}
-
-//To push new data into the database
-async function saveToDb(userID, savenote, newUser = 0) {
-  const db = await connection();
-  const notes = await readFromDb();
-
-  if (!newUser) {
-    notes.forEach(function (element) {
-      if (element.userID === userID) {
-        element.notes.push(savenote);
-      }
-    });
-  } else {
-    notes.push({ userID, notes: [`${savenote}`] });
-  }
-  db.data = notes;
-  await db.write();
-}
 
 //Read notes
 bot.onText(/\/read_note (.+)/, async (msg, readmatch) => {

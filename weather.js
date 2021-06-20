@@ -1,5 +1,5 @@
 import axios from "axios";
-const appID = "";
+const appID = "28420d0d82cb35240f648cd22425217f";
 
 //WEATHER COMMAND
 const weatherEndpoint = (city) =>

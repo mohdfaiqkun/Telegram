@@ -1,11 +1,9 @@
-
 import TelegramBot from "node-telegram-bot-api";
 import { getIP } from "./ipv4.js";
 import { getWeather } from "./weather.js";
-import { readFromDb } from "./notes.js";
-import { saveToDb } from "./notes.js";
+import { readFromDb, saveToDb, readAll, readNotesNum } from "./notes.js";
 
-const token = "";
+const token = "1764741890:AAFpDcj3gUFtC--LNRManbxbmCEZDG0rTmQ";
 
 //Creating a Telegram Bot
 const bot = new TelegramBot(token, {
@@ -82,45 +80,20 @@ bot.onText(/\/save_note (.+)/, async (msg, savematch) => {
   bot.sendMessage(userID, `Note saved!`, { parse_mode: "HTML" });
 });
 
-
 //Read notes
 bot.onText(/\/read_note (.+)/, async (msg, readmatch) => {
-  const data = await readFromDb();
   const userID = msg.chat.id;
   const readnote = readmatch[1];
-  const filterResult = data.filter((note) => note.userID === userID);
-  let notesLine = "All your notes: \n";
 
-  if (filterResult.length == 1 && readnote === "all") {
-    if (filterResult[0].notes.length === 0) {
-      bot.sendMessage(userID, `No notes`, { parse_mode: "HTML" });
-    } else {
-      filterResult[0].notes.forEach(function (element) {
-        notesLine += `${element}\n`;
-      });
-      bot.sendMessage(userID, `${notesLine}`, { parse_mode: "HTML" });
-    }
+  if (readnote === "all") {
+    const readAllVali = await readAll(userID);
+    bot.sendMessage(userID, readAllVali, { parse_mode: "HTML" });
     return;
   }
 
   if (Number.isInteger(parseInt(readnote)) && readnote > 0) {
-    if (filterResult.length === 0) {
-      bot.sendMessage(userID, `No notes saved yet`, { parse_mode: "HTML" });
-    } else {
-      if (filterResult[0].notes.length >= readnote) {
-        bot.sendMessage(
-          userID,
-          `Your notes: ${filterResult[0].notes[readnote - 1]}`,
-          { parse_mode: "HTML" }
-        );
-      } else {
-        bot.sendMessage(
-          userID,
-          `You only have ${filterResult[0].notes.length} notes`,
-          { parse_mode: "HTML" }
-        );
-      }
-    }
+    const readNoteID = await readNotesNum(userID, readnote);
+    bot.sendMessage(userID, readNoteID, { parse_mode: "HTML" });
   } else {
     bot.sendMessage(userID, `Please provide a valid number`, {
       parse_mode: "HTML",
